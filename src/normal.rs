@@ -116,6 +116,7 @@ impl CaptchaRequest for Captcha {
                 let form = multipart::Form::new()
                     .text("method", "post")
                     .text("key", api_token.key.clone())
+                    .text("json", "1")
                     .part("file", image_file_part);
 
                 Ok(request_builder.multipart(form))
@@ -123,8 +124,9 @@ impl CaptchaRequest for Captcha {
             CaptchaData::Base64(base64_string) => {
                 let request_builder = request_builder
                     .form(&[
-                        ("key", &*api_token.key),
                         ("method", "base64"),
+                        ("key", &*api_token.key),
+                        ("json", "1"),
                         ("body", &*base64_string),
                     ]);
                 Ok(request_builder)
