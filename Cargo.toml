@@ -1,6 +1,6 @@
 [package]
 name = "two-captcha"
-version = "0.1.0"
+version = "0.1.1"
 license = "MIT"
 authors = ["Alexey Voznyuk <me@swizard.info>"]
 description = "2captcha async client."
@@ -11,5 +11,8 @@ log = "^0.4"
 base64 = "^0.13"
 futures = "^0.3"
 serde_json = "^1.0"
+async-trait = "0.1.51"
 
+reqwest = { version = "^0.11", features = ["multipart", "stream"] }
 tokio = { version = "^1.11", features = ["full"] }
+tokio-util = { version = "^0.6", features = ["codec"] }

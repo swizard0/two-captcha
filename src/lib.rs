@@ -1,3 +1,10 @@
+use reqwest::{
+    RequestBuilder,
+};
+
+use async_trait::{
+    async_trait,
+};
 
 pub mod normal;
 
@@ -18,8 +25,18 @@ impl Default for Params {
     }
 }
 
+pub struct ApiToken {
+    key: String,
+}
+
+impl From<String> for ApiToken {
+    fn from(key: String) -> ApiToken {
+        ApiToken { key, }
+    }
+}
+
 pub struct Api {
-    api_token: String,
+    api_token: ApiToken,
     params: Params,
 }
 
@@ -28,16 +45,22 @@ pub struct Solved {
 
 #[derive(Debug)]
 pub enum ApiError {
-
 }
 
 impl Api {
-    pub fn new(api_token: String, params: Params) -> Api {
+    pub fn new(api_token: ApiToken, params: Params) -> Api {
         Api { api_token, params, }
     }
 
-    pub fn solve<C>(&self, captcha: C) -> Result<Solved, ApiError> {
+    pub fn solve<C>(&self, captcha: C) -> Result<Solved, ApiError> where C: CaptchaRequest {
 
         todo!()
     }
+}
+
+#[async_trait]
+pub trait CaptchaRequest {
+    type PrepareRequestError;
+
+    async fn prepare_request(&self, api_token: &ApiToken, request_builder: RequestBuilder) -> Result<RequestBuilder, Self::PrepareRequestError>;
 }

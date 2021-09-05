@@ -5,6 +5,32 @@ use std::{
     },
 };
 
+use tokio::{
+    fs::File,
+};
+
+use tokio_util::{
+    codec::{
+        FramedRead,
+        BytesCodec,
+    },
+};
+
+use reqwest::{
+    Body,
+    RequestBuilder,
+    multipart,
+};
+
+use async_trait::{
+    async_trait,
+};
+
+use crate::{
+    ApiToken,
+    CaptchaRequest,
+};
+
 pub struct Captcha {
     captcha_data: CaptchaData,
 }
@@ -59,6 +85,50 @@ impl CaptchaBuilder {
             Ok(Captcha { captcha_data, })
         } else {
             Err(BuilderError::CaptchaImageIsNotProvided)
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum PrepareRequestError {
+    CaptchaImageFileOpen { filename: PathBuf, error: std::io::Error, },
+}
+
+#[async_trait]
+impl CaptchaRequest for Captcha {
+    type PrepareRequestError = PrepareRequestError;
+
+    async fn prepare_request(&self, api_token: &ApiToken, request_builder: RequestBuilder) -> Result<RequestBuilder, Self::PrepareRequestError> {
+        match &self.captcha_data {
+            CaptchaData::UploadFile(path_buf) => {
+                let file = File::open(path_buf).await
+                    .map_err(|error| {
+                        PrepareRequestError::CaptchaImageFileOpen {
+                            filename: path_buf.clone(),
+                            error,
+                        }
+                    })?;
+                let stream = FramedRead::new(file, BytesCodec::new());
+
+                let image_file_part = multipart::Part::stream(Body::wrap_stream(stream))
+                    .file_name(path_buf.to_string_lossy().to_string());
+
+                let form = multipart::Form::new()
+                    .text("method", "post")
+                    .text("key", api_token.key.clone())
+                    .part("file", image_file_part);
+
+                Ok(request_builder.multipart(form))
+            },
+            CaptchaData::Base64(base64_string) => {
+                let request_builder = request_builder
+                    .form(&[
+                        ("key", &*api_token.key),
+                        ("method", "base64"),
+                        ("body", &*base64_string),
+                    ]);
+                Ok(request_builder)
+            },
         }
     }
 }
