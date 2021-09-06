@@ -33,10 +33,12 @@ use crate::{
 
 pub struct Captcha {
     captcha_data: CaptchaData,
+    is_case_sensitive: bool,
 }
 
 pub struct CaptchaBuilder {
     maybe_captcha_data: Option<CaptchaData>,
+    is_case_sensitive: bool,
 }
 
 enum CaptchaData {
@@ -54,6 +56,7 @@ impl CaptchaBuilder {
     pub fn new() -> CaptchaBuilder {
         CaptchaBuilder {
             maybe_captcha_data: None,
+            is_case_sensitive: false,
         }
     }
 
@@ -80,9 +83,17 @@ impl CaptchaBuilder {
         self
     }
 
+    pub fn set_case_sensitive(mut self, is_case_sensitive: bool) -> Self {
+        self.is_case_sensitive = is_case_sensitive;
+        self
+    }
+
     pub fn finish(self) -> Result<Captcha, BuilderError> {
         if let Some(captcha_data) = self.maybe_captcha_data {
-            Ok(Captcha { captcha_data, })
+            Ok(Captcha {
+                captcha_data,
+                is_case_sensitive: self.is_case_sensitive,
+            })
         } else {
             Err(BuilderError::CaptchaImageIsNotProvided)
         }
@@ -117,6 +128,7 @@ impl CaptchaRequest for Captcha {
                     .text("method", "post")
                     .text("key", api_token.key.clone())
                     .text("json", "1")
+                    .text("regsense", if self.is_case_sensitive { "1" } else { "0" })
                     .part("file", image_file_part);
 
                 Ok(request_builder.multipart(form))
@@ -127,6 +139,7 @@ impl CaptchaRequest for Captcha {
                         ("method", "base64"),
                         ("key", &*api_token.key),
                         ("json", "1"),
+                        ("regsense", if self.is_case_sensitive { "1" } else { "0" }),
                         ("body", &*base64_string),
                     ]);
                 Ok(request_builder)
