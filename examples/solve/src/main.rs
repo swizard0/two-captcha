@@ -13,6 +13,9 @@ struct CliArgs {
     /// captcha image file
     #[structopt(short = "f", long = "captcha-file")]
     captcha_file: PathBuf,
+    /// is captcha is case sensitive
+    #[structopt(short = "s", long = "case-sensitive")]
+    case_sensitive: bool,
     /// api request url
     #[structopt(long = "api-request-url", default_value = API_REQUEST_URL)]
     api_request_url: String,
@@ -38,6 +41,7 @@ async fn main() -> Result<(), Error> {
 
     let captcha = two_captcha::normal::CaptchaBuilder::new()
         .set_upload_file(cli_args.captcha_file)
+        .set_case_sensitive(cli_args.case_sensitive)
         .finish()
         .map_err(Error::TwoCaptchaNormal)?;
 
