@@ -1,0 +1,17 @@
+[package]
+name = "solve"
+version = "0.1.0"
+license = "Kribrum"
+authors = ["Alexey Voznyuk <me@swizard.info>"]
+description = "2captcha example: solving captcha from a file."
+edition = "2018"
+
+[dependencies]
+two-captcha = { path = "../.." }
+
+log = "0.4"
+futures = "^0.3"
+structopt = "^0.3"
+pretty_env_logger = "^0.4"
+
+tokio = { version = "^1.11", features = ["full"] }

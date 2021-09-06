@@ -57,12 +57,12 @@ impl CaptchaBuilder {
         }
     }
 
-    pub fn set_upload_file<P>(&mut self, path: P) -> &mut Self where P: AsRef<Path> {
+    pub fn set_upload_file<P>(mut self, path: P) -> Self where P: AsRef<Path> {
         self.maybe_captcha_data = Some(CaptchaData::UploadFile(path.as_ref().to_owned()));
         self
     }
 
-    pub fn set_image_data_base64<T>(&mut self, base64_str: T) -> Result<&mut Self, BuilderError> where T: AsRef<str> {
+    pub fn set_image_data_base64<T>(mut self, base64_str: T) -> Result<Self, BuilderError> where T: AsRef<str> {
         base64::decode(base64_str.as_ref())
             .map_err(|error| {
                 BuilderError::InvalidBase64 {
@@ -74,7 +74,7 @@ impl CaptchaBuilder {
         Ok(self)
     }
 
-    pub fn set_image_data_encode_as_base64<T>(&mut self, image_data: T) -> &mut Self where T: AsRef<[u8]> {
+    pub fn set_image_data_encode_as_base64<T>(mut self, image_data: T) -> Self where T: AsRef<[u8]> {
         let base64_string = base64::encode(image_data.as_ref());
         self.maybe_captcha_data = Some(CaptchaData::Base64(base64_string));
         self

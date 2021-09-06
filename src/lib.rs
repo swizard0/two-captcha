@@ -75,13 +75,13 @@ pub enum ApiError<E> {
     SendCaptchaRequest(reqwest::Error),
     SendCaptchaRequestBadStatusCode { status_code: StatusCode, },
     ReadCaptchaResponse(reqwest::Error),
-    DecodeCaptchaResponse(serde_json::Error),
+    DecodeCaptchaResponse(DecodeApiResponse),
     CaptchaResponse(CaptchaResponseError),
     PollResponse(PollResponseError),
     SendPollRequest(reqwest::Error),
     SendPollRequestBadStatusCode { status_code: StatusCode, },
     ReadPollResponse(reqwest::Error),
-    DecodePollResponse(serde_json::Error),
+    DecodePollResponse(DecodeApiResponse),
 }
 
 impl Api {
@@ -89,7 +89,9 @@ impl Api {
         Api { api_token, params, }
     }
 
-    pub async fn solve<C>(&self, captcha: C) -> Result<Solved, ApiError<C::PrepareRequestError>> where C: CaptchaRequest {
+    pub async fn solve<C>(&self, captcha: &C) -> Result<Solved, ApiError<C::PrepareRequestError>> where C: CaptchaRequest {
+        log::debug!("making request with key = {} to {}", self.api_token.key, self.params.api_request_url);
+
         let client = Client::new();
         let request_builder = client.post(&self.params.api_request_url);
         let request_builder = captcha.prepare_request(&self.api_token, request_builder).await
@@ -102,11 +104,14 @@ impl Api {
         }
         let api_response_string = response.text().await
             .map_err(ApiError::ReadCaptchaResponse)?;
-        let api_response: ApiResponse = serde_json::from_str(&api_response_string)
+        let api_response = ApiResponse::parse(&api_response_string)
             .map_err(ApiError::DecodeCaptchaResponse)?;
 
         let captcha_id = api_response.extract_captcha_id()
             .map_err(ApiError::CaptchaResponse)?;
+
+        log::debug!("request finished, captcha id = {}, sleeping for {} ms", captcha_id, self.params.poll_timeout_ms);
+        sleep(Duration::from_millis(self.params.poll_timeout_ms)).await;
 
         let get_parameters = [
             ("key", &*self.api_token.key),
@@ -116,10 +121,11 @@ impl Api {
         ];
 
         loop {
-            let now = Instant::now();
+            log::debug!("making request with captcha id = {} to {}", captcha_id, self.params.api_result_url);
 
+            let now = Instant::now();
             let response = client.get(&self.params.api_result_url)
-                .form(&get_parameters)
+                .query(&get_parameters)
                 .send()
                 .await
                 .map_err(ApiError::SendPollRequest)?;
@@ -129,7 +135,10 @@ impl Api {
             }
             let api_response_string = response.text().await
                 .map_err(ApiError::ReadPollResponse)?;
-            let api_response: ApiResponse = serde_json::from_str(&api_response_string)
+
+            log::debug!("request finished, server responded: {}", api_response_string);
+
+            let api_response = ApiResponse::parse(&api_response_string)
                 .map_err(ApiError::DecodePollResponse)?;
 
             let poll_result = api_response.extract_poll_result()
@@ -197,6 +206,7 @@ pub enum PollResponseError {
     ErrorReportNotRecorded,
     ErrorDuplicateReport,
     RequestLimitExceeded { code: String, },
+    IpBanned,
     ErrorIpAddres,
     ErrorTokenExpired,
     ErrorEmptyAction,
@@ -209,7 +219,27 @@ enum PollResult {
     Ready { solved_captcha: String, },
 }
 
+#[derive(Debug)]
+pub enum DecodeApiResponse {
+    IpBanned,
+    UnexpectedResponse { source: String, error: serde_json::Error, },
+}
+
 impl ApiResponse {
+    fn parse(api_response_str: &str) -> Result<ApiResponse, DecodeApiResponse> {
+        match api_response_str {
+            "IP_BANNED" =>
+                Err(DecodeApiResponse::IpBanned),
+            _ => {
+                serde_json::from_str(&api_response_str)
+                    .map_err(|error| DecodeApiResponse::UnexpectedResponse {
+                        source: api_response_str.to_string(),
+                        error,
+                    })
+            },
+        }
+    }
+
     fn extract_captcha_id(self) -> Result<String, CaptchaResponseError> {
         match self {
             ApiResponse { status: 1, request, } =>
@@ -285,6 +315,8 @@ impl ApiResponse {
                 Err(PollResponseError::RequestLimitExceeded { code: request[6 ..].trim().to_string(), }),
             ApiResponse { status: 0, request, } if request == "ERROR_IP_ADDRES" =>
                 Err(PollResponseError::ErrorIpAddres),
+            ApiResponse { status: 0, request, } if request == "IP_BANNED" =>
+                Err(PollResponseError::IpBanned),
             ApiResponse { status: 0, request, } if request == "ERROR_TOKEN_EXPIRED" =>
                 Err(PollResponseError::ErrorTokenExpired),
             ApiResponse { status: 0, request, } if request == "ERROR_EMPTY_ACTION" =>
