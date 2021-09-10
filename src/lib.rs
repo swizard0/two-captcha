@@ -27,6 +27,9 @@ use async_trait::{
 
 pub mod normal;
 
+pub const API_REQUEST_URL: &'static str = "http://2captcha.com/in.php";
+pub const API_RESULT_URL: &'static str = "http://2captcha.com/res.php";
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct Params {
     pub api_request_url: String,
@@ -37,8 +40,8 @@ pub struct Params {
 impl Default for Params {
     fn default() -> Params {
         Params {
-            api_request_url: "http://2captcha.com/in.php".into(),
-            api_result_url: "http://2captcha.com/res.php".into(),
+            api_request_url: API_REQUEST_URL.into(),
+            api_result_url: API_RESULT_URL.into(),
             poll_timeout_ms: 5000,
         }
     }

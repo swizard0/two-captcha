@@ -1,6 +1,6 @@
 [package]
 name = "two-captcha"
-version = "0.1.4"
+version = "0.1.5"
 license = "MIT"
 authors = ["Alexey Voznyuk <me@swizard.info>"]
 description = "2captcha async client."
