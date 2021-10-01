@@ -19,6 +19,12 @@ pub struct CliArgs {
     poll_timeout_ms: u64,
 }
 
+impl AsRef<CliArgs> for CliArgs {
+    fn as_ref(&self) -> &CliArgs {
+        self
+    }
+}
+
 impl crate::Params {
     pub fn from_cli_args<A>(cli_args: A) -> Self where A: AsRef<CliArgs> {
         Self {
