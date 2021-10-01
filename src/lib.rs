@@ -28,9 +28,12 @@ use async_trait::{
 };
 
 pub mod normal;
+pub mod cli_args;
 
 pub const API_REQUEST_URL: &'static str = "http://2captcha.com/in.php";
 pub const API_RESULT_URL: &'static str = "http://2captcha.com/res.php";
+pub const DEFAULT_POLL_TIMEOUT_MS: u64 = 5000;
+pub const DEFAULT_POLL_TIMEOUT_MS_STR: &'static str = "5000";
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Params {
@@ -44,7 +47,7 @@ impl Default for Params {
         Params {
             api_request_url: API_REQUEST_URL.into(),
             api_result_url: API_RESULT_URL.into(),
-            poll_timeout_ms: 5000,
+            poll_timeout_ms: DEFAULT_POLL_TIMEOUT_MS,
         }
     }
 }
