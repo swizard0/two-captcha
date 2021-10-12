@@ -124,6 +124,8 @@ impl CaptchaRequest for Captcha {
                 let image_file_part = multipart::Part::stream(Body::wrap_stream(stream))
                     .file_name(path_buf.to_string_lossy().to_string());
 
+                log::debug!("building UploadFile request with {:?}", path_buf);
+
                 let form = multipart::Form::new()
                     .text("method", "post")
                     .text("key", api_token.key.clone())
@@ -134,6 +136,9 @@ impl CaptchaRequest for Captcha {
                 Ok(request_builder.multipart(form))
             },
             CaptchaData::Base64(base64_string) => {
+
+                log::debug!("building Base64 request with captcha base64 = {:?}", base64_string);
+
                 let request_builder = request_builder
                     .form(&[
                         ("method", "base64"),
