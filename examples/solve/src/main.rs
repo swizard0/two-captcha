@@ -25,12 +25,16 @@ struct CliArgs {
     /// results poll interval timeout (in milliseconds)
     #[structopt(long = "poll-timeout-ms", default_value = "5000")]
     poll_timeout_ms: u64,
+    /// force base64 mode
+    #[structopt(long = "force-base64")]
+    force_base64: bool,
 }
 
 #[derive(Debug)]
 enum Error {
     TwoCaptchaNormal(two_captcha::normal::BuilderError),
     TwoCaptcha(two_captcha::ApiError<two_captcha::normal::PrepareRequestError>),
+    CaptchaFileRead(std::io::Error),
 }
 
 #[tokio::main]
@@ -40,9 +44,15 @@ async fn main() -> Result<(), Error> {
     log::debug!("cli_args = {:?}", cli_args);
 
     let captcha = two_captcha::normal::CaptchaBuilder::new()
-        .set_upload_file(cli_args.captcha_file)
-        .set_case_sensitive(cli_args.case_sensitive)
-        .finish()
+        .set_case_sensitive(cli_args.case_sensitive);
+    let captcha = if cli_args.force_base64 {
+        let image_png = std::fs::read(&cli_args.captcha_file)
+            .map_err(Error::CaptchaFileRead)?;
+        captcha.set_image_data_encode_as_base64(&image_png)
+    } else {
+        captcha.set_upload_file(cli_args.captcha_file)
+    };
+    let captcha = captcha.finish()
         .map_err(Error::TwoCaptchaNormal)?;
 
     let api = two_captcha::Api::new(

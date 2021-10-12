@@ -137,7 +137,7 @@ impl CaptchaRequest for Captcha {
             },
             CaptchaData::Base64(base64_string) => {
 
-                log::debug!("building Base64 request with captcha base64 = {:?}", base64_string);
+                log::debug!("building Base64 request with captcha base64.len = {}", base64_string.len());
 
                 let request_builder = request_builder
                     .form(&[

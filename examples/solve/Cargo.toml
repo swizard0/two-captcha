@@ -1,6 +1,6 @@
 [package]
 name = "solve"
-version = "0.1.0"
+version = "0.1.1"
 license = "Kribrum"
 authors = ["Alexey Voznyuk <me@swizard.info>"]
 description = "2captcha example: solving captcha from a file."
