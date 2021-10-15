@@ -29,7 +29,7 @@ impl crate::Params {
     pub fn from_cli_args<A>(cli_args: A) -> Self where A: AsRef<CliArgs> {
         Self {
             api_request_url: cli_args.as_ref().api_request_url.clone(),
-            api_result_url: cli_args.as_ref().api_request_url.clone(),
+            api_result_url: cli_args.as_ref().api_result_url.clone(),
             poll_timeout_ms: cli_args.as_ref().poll_timeout_ms,
         }
     }
