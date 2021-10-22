@@ -1,10 +1,10 @@
 [package]
 name = "two-captcha"
-version = "0.2.3"
+version = "0.2.4"
 license = "MIT"
 authors = ["Alexey Voznyuk <me@swizard.info>"]
 description = "2captcha async client."
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 log = "^0.4"
